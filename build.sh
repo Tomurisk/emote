@@ -53,21 +53,78 @@ patch -p1 < 154.patch
 ###############################################
 
 cat > wayland-paste.patch << 'EOF'
---- a/emote/picker.py  2026-03-06 23:18:58.983707198 +0200
-+++ b/emote/picker.py   2026-03-06 23:20:39.295973034 +0200
-@@ -648,8 +648,10 @@
+--- a/emote/picker.py
++++ b/emote/picker.py
+@@ -3,6 +3,8 @@
+ from datetime import datetime
+ import gi
+ from itertools import zip_longest
++import subprocess
++import time
  
+ gi.require_version("Gtk", "3.0")
+ from gi.repository import Gtk, Gdk, GLib, Gio, Pango
+@@ -630,26 +632,29 @@
+         self.add_emoji_to_recent(emoji)
+ 
+     def on_emoji_select(self, emoji):
+-        """
+-        Copy the selected emoji to the clipboard, close the picker window and
+-        make the user's system perform a paste after 150ms, pasting the emoji
+-        to the currently focused application window.
+-
+-        If we have been appending other emojis first, add this final one first.
+-        """
+         self.hide()
+ 
++        # Append or copy normally
+         if len(self.emoji_append_list) > 0:
+             self.on_emoji_append(emoji)
+         else:
+-            print(f"Selecting {emoji}")
+             self.add_emoji_to_recent(emoji)
+             self.copy_to_clipboard(emoji)
+ 
++        # --- NEW: wait until clipboard actually contains the emoji ---
++        if config.is_wayland:
++            self.wait_for_wl_clipboard(emoji)
++        else:
++            self.wait_for_x11_clipboard(emoji)
++        # -------------------------------------------------------------
++
++        # Now it is safe to destroy the window
          self.destroy()
  
 -        if not config.is_wayland:
 -            time.sleep(0.15)
++        # Paste
 +        if config.is_wayland:
-+            os.system('bash -c "sleep 0.5; ydotool key 29:1 47:1 47:0 29:0" &')
++            os.system('ydotool key 29:1 47:1 47:0 29:0 &')
 +        else:
-+            time.sleep(0.5)
              os.system("xdotool key ctrl+v")
  
      def add_emoji_to_recent(self, emoji):
+@@ -661,3 +666,20 @@
+         cb.set_text(content, -1)
+         if config.is_wayland:
+             os.system(f'wl-copy "{content}"')
++
++    def wait_for_x11_clipboard(expected, timeout=0.5):
++        deadline = time.time() + timeout
++
++        while time.time() < deadline:
++            try:
++                out = subprocess.check_output(
++                    ["xclip", "-selection", "clipboard", "-o"],
++                    text=True
++                ).strip()
++                if out == expected:
++                    return True
++            except Exception:
++                pass
++            time.sleep(0.02)
++
++        return False
 EOF
 
 patch -p1 < wayland-paste.patch
