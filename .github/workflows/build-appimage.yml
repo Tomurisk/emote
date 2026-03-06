@@ -1,0 +1,60 @@
+name: Build AppImage (Continuous)
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    container:
+      image: oraclelinux:8
+
+    steps:
+      - name: Delete old release (if exists)
+        if: steps.decide.outputs.build == 'true' && steps.current.outputs.release_id != ''
+        shell: bash
+        env:
+          RELEASE_ID: ${{ steps.current.outputs.release_id }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Deleting release ID: $RELEASE_ID"
+
+          curl -X DELETE \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID
+      - name: Update system
+        run: |
+          dnf -y update
+          dnf -y install dnf-plugins-core
+          dnf config-manager --set-enabled ol8_codeready_builder
+
+      - name: Install dependencies
+        run: |
+          dnf install -y \
+            patch wget file \
+            python3 python3-setuptools python3-pip \
+            python3-gobject-base python3-cairo \
+            gobject-introspection gtk3 keybinder3 \
+            gdk-pixbuf2 gdk-pixbuf2-modules librsvg2
+
+      - uses: actions/checkout@v4
+
+      - name: Make build script executable
+        run: chmod +x build.sh
+
+      - name: Build AppImage
+        run: ./build.sh
+
+      - name: Upload to Continuous Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: continuous
+          name: Continuous Build
+          files: "*.AppImage"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
