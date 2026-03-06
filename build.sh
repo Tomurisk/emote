@@ -53,18 +53,21 @@ patch -p1 < 154.patch
 ###############################################
 
 cat > wayland-paste.patch << 'EOF'
---- a/emote/picker.py
-+++ b/emote/picker.py
-@@ -648,7 +648,9 @@
+--- a/emote/picker.py  2026-03-06 23:18:58.983707198 +0200
++++ b/emote/picker.py   2026-03-06 23:20:39.295973034 +0200
+@@ -648,8 +648,10 @@
  
          self.destroy()
  
 -        if not config.is_wayland:
+-            time.sleep(0.15)
 +        if config.is_wayland:
-+            os.system('bash -c "sleep 0.15; ydotool key 29:1 47:1 47:0 29:0" &')
++            os.system('bash -c "sleep 0.5; ydotool key 29:1 47:1 47:0 29:0" &')
 +        else:
-             time.sleep(0.15)
++            time.sleep(0.5)
              os.system("xdotool key ctrl+v")
+ 
+     def add_emoji_to_recent(self, emoji):
 EOF
 
 patch -p1 < wayland-paste.patch
