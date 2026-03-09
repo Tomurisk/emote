@@ -1,3 +1,8 @@
+# Additional packages to install on your system
+X11: `xdotool`
+
+Wayland: `wl-copy ydotool`
+
 # Tested distros
 Ubuntu 18.10
 

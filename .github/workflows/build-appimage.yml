@@ -14,24 +14,47 @@ jobs:
       image: oraclelinux:8
 
     steps:
-      - name: Delete old release (if exists)
-        if: steps.decide.outputs.build == 'true' && steps.current.outputs.release_id != ''
+      - name: Delete old continuous release and tag
         shell: bash
         env:
-          RELEASE_ID: ${{ steps.current.outputs.release_id }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Deleting release ID: $RELEASE_ID"
+          API="https://api.github.com/repos/${{ github.repository }}"
 
-          curl -X DELETE \
-            -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID
+          # Query release by tag
+          RESPONSE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "$API/releases/tags/continuous")
+
+          # Extract release ID without jq
+          RELEASE_ID=$(echo "$RESPONSE" | grep '"id":' | head -n1 | sed 's/[^0-9]*//g')
+
+          if [ -n "$RELEASE_ID" ]; then
+            echo "Deleting release ID: $RELEASE_ID"
+            curl -s -X DELETE \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "$API/releases/$RELEASE_ID"
+          else
+            echo "No existing release found."
+          fi
+
+          # Delete the tag if it exists
+          TAG_RESPONSE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "$API/git/refs/tags/continuous")
+
+          TAG_EXISTS=$(echo "$TAG_RESPONSE" | grep -c '"ref":')
+
+          if [ "$TAG_EXISTS" -gt 0 ]; then
+            echo "Deleting tag: continuous"
+            curl -s -X DELETE \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              "$API/git/refs/tags/continuous"
+          else
+            echo "Tag 'continuous' does not exist."
+          fi
       - name: Update system
         run: |
           dnf -y update
-          dnf -y install dnf-plugins-core
-          dnf config-manager --set-enabled ol8_codeready_builder
 
       - name: Install dependencies
         run: |

@@ -97,8 +97,6 @@ cd ..
 ###############################################
 
 mkdir -p "$APPDIR/usr/bin"
-mkdir -p "$APPDIR/usr/lib"
-mkdir -p "$APPDIR/usr/lib/python${PYVER}"
 
 # Interpreter
 if [ -x "/usr/bin/python${PYVER}" ]; then
@@ -128,10 +126,10 @@ fi
 # Copy setproctitle (installed via --user)
 ###############################################
 
-SITE="$HOME/.local/lib/python${PYVER}/site-packages"
+SITE_USER="$HOME/.local/lib/python${PYVER}/site-packages"
 
-if ls "$SITE"/setproctitle*.so 1>/dev/null 2>&1; then
-    cp "$SITE"/setproctitle*.so "$SITE_PACKAGES"/
+if ls "$SITE_USER"/setproctitle*.so 1>/dev/null 2>&1; then
+    cp "$SITE_USER"/setproctitle*.so "$SITE_PACKAGES"/
 else
     echo "ERROR: setproctitle not found in user site-packages"
     exit 1
@@ -176,7 +174,7 @@ else
 fi
 
 ###############################################
-# Bundle GI typelibs
+# Bundle Keybinder typelib
 ###############################################
 
 mkdir -p "$APPDIR/usr/lib/girepository-1.0"
