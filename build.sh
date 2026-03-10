@@ -54,33 +54,81 @@ patch -p1 < 154.patch
 cat > qol.patch << 'EOF'
 --- a/emote/picker.py
 +++ b/emote/picker.py
-@@ -234,23 +234,36 @@
+@@ -1,5 +1,6 @@
+ import os
+ import time
++import regex
+ from datetime import datetime
+ import gi
+ from itertools import zip_longest
+@@ -206,51 +207,68 @@
+ 
+         self.previewed_emoji_label = Gtk.Label(" ")
+         self.previewed_emoji_label.set_name("previewed_emoji_label")
+-        self.previewed_emoji_label.set_alignment(0, 0.2)
++        self.previewed_emoji_label.set_alignment(0, 0.5)
+         self.emoji_preview_box.pack_start(self.previewed_emoji_label, False, False, 0)
+ 
+         self.emoji_preview_box_text = Gtk.Box(
+             spacing=0, orientation=Gtk.Orientation.VERTICAL
+         )
++
++        self.emoji_preview_box_text.set_size_request(200, -1)
++
+         self.previewed_emoji_name_label = Gtk.Label(
+-            " ", ellipsize=Pango.EllipsizeMode.END
++            " ", ellipsize=Pango.EllipsizeMode.END, max_width_chars=22
+         )
+         self.previewed_emoji_name_label.set_name("previewed_emoji_name_label")
+-        self.previewed_emoji_name_label.set_alignment(0, 0.2)
++        self.previewed_emoji_name_label.set_alignment(0, 0.5)
++
+         self.emoji_preview_box_text.pack_start(
+-            self.previewed_emoji_name_label, False, False, 0
++            self.previewed_emoji_name_label, True, True, 0
+         )
+ 
+         self.previewed_emoji_shortcode_label = Gtk.Label(
+-            " ", ellipsize=Pango.EllipsizeMode.END
++            " ", ellipsize=Pango.EllipsizeMode.END, max_width_chars=22
+         )
+         self.previewed_emoji_shortcode_label.set_name("previewed_emoji_shortcode_label")
+-        self.previewed_emoji_shortcode_label.set_alignment(0, 0.2)
++        self.previewed_emoji_shortcode_label.set_alignment(0, 0.5)
++
+         self.emoji_preview_box_text.pack_start(
+-            self.previewed_emoji_shortcode_label, False, False, 0
++            self.previewed_emoji_shortcode_label, True, True, 0
+         )
+ 
+-        self.emoji_preview_box.pack_start(self.emoji_preview_box_text, False, False, 0)
++        self.emoji_preview_box.pack_start(self.emoji_preview_box_text, False, False, 6)
  
          self.action_bar.pack_start(self.emoji_preview_box)
  
 -        self.selected_box = Gtk.Box(
 -            spacing=GRID_SIZE, margin=GRID_SIZE, margin_bottom=0, expand=False
 -        )
--
 +        self.selected_eventbox = Gtk.EventBox()
 +        self.selected_eventbox.set_visible_window(False)
 +        self.selected_eventbox.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
-+        
+ 
          self.emoji_append_list_preview = Gtk.Label(
-             " ", max_width_chars=25, ellipsize=Pango.EllipsizeMode.START
+-            " ", max_width_chars=25, ellipsize=Pango.EllipsizeMode.START
++            " ", ellipsize=Pango.EllipsizeMode.START
          )
          self.emoji_append_list_preview.set_name("emoji_append_list_preview")
 -        self.selected_box.pack_start(self.emoji_append_list_preview, False, False, 0)
 +        self.selected_eventbox.add(self.emoji_append_list_preview)
-+
-+        self.selected_eventbox.connect("button-press-event", self.on_selected_box_middle_click)
  
 -        self.action_bar.pack_end(self.selected_box)
-+        self.action_bar.pack_end(self.selected_eventbox)
++        self.selected_eventbox.connect(
++            "button-press-event", self.on_selected_box_middle_click
++        )
  
++        self.action_bar.pack_end(self.selected_eventbox)
          self.action_bar.show_all()
 -        self.selected_box.hide()
-+        self.selected_eventbox.hide()
  
          self.app_container.pack_end(self.action_bar, False, False, 0)
  
@@ -88,26 +136,60 @@ cat > qol.patch << 'EOF'
 +        """Clear emoji list on middle click (button 2)"""
 +        if event.button == 2:  # Middle mouse button
 +            print("✅ Cleared emoji selection!")
-+            self.emoji_append_list_preview.set_text("")
-+            self.copy_to_clipboard("")
 +            self.emoji_append_list = []
-+            self.selected_eventbox.hide()
++            self.copy_to_clipboard("")
++            self.update_emoji_append_list_preview()
 +            return True
 +        return False
 +
      def get_skintone_char(self, emoji):
          char = emoji["char"]
  
-@@ -620,7 +633,7 @@
+@@ -282,9 +300,29 @@
+             self.previewed_emoji_name_label.set_text(" ")
+             self.previewed_emoji_shortcode_label.set_text(" ")
+ 
++    def split_graphemes(self, text):
++        return regex.findall(r"\X", text)
++
++    def wrap_emoji_lines(self, graphemes, per_line=10):
++        lines = []
++        for i in range(0, len(graphemes), per_line):
++            lines.append("".join(graphemes[i:i+per_line]))
++        return "\n".join(lines)
++
+     def update_emoji_append_list_preview(self):
+-        self.emoji_append_list_preview.show_all()
+-        self.emoji_append_list_preview.set_text("".join(self.emoji_append_list))
++        text = "".join(self.emoji_append_list)
++
++        graphemes = self.split_graphemes(text)
++        wrapped = self.wrap_emoji_lines(graphemes, per_line=10)
++
++        self.emoji_append_list_preview.set_text(wrapped)
++        self.emoji_append_list_preview.set_line_wrap(True)
++        self.emoji_append_list_preview.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR)
++
++        if graphemes:
++            self.selected_eventbox.show()
++        else:
++            self.selected_eventbox.hide()
+ 
+     def check_welcome(self, show_welcome):
+         """Show the guide the first time we run the app"""
+@@ -619,11 +657,6 @@
+         print(f"Appending {emoji} to selection")
          self.emoji_append_list.append(emoji)
  
-         if len(self.emoji_append_list) == 1:
+-        if len(self.emoji_append_list) == 1:
 -            self.selected_box.show_all()
-+            self.selected_eventbox.show()
-             self.previewed_emoji_name_label.set_max_width_chars(20)
-             self.previewed_emoji_shortcode_label.set_max_width_chars(20)
+-            self.previewed_emoji_name_label.set_max_width_chars(20)
+-            self.previewed_emoji_shortcode_label.set_max_width_chars(20)
+-
+         self.update_emoji_append_list_preview()
  
-@@ -646,11 +659,19 @@
+         self.copy_to_clipboard("".join(self.emoji_append_list))
+@@ -646,11 +679,19 @@
              self.add_emoji_to_recent(emoji)
              self.copy_to_clipboard(emoji)
  
@@ -125,8 +207,8 @@ cat > qol.patch << 'EOF'
 +        if config.is_wayland:
 +            os.system('bash -c "sleep 0.15; ydotool key 29:1 47:1 47:0 29:0" &')
 +        else:
-+             time.sleep(0.15)
-+             os.system("xdotool key ctrl+v")
++            time.sleep(0.15)
++            os.system("xdotool key ctrl+v")
  
      def add_emoji_to_recent(self, emoji):
          user_data.update_recent_emojis(emoji)
@@ -274,6 +356,14 @@ if ls $SYSTEM_PACKAGES/pycairo* 1>/dev/null 2>&1; then
         "$SITE_PACKAGES/"
 else
     echo "ERROR: PyCairo missing – required for GTK"
+    exit 1
+fi
+
+if ls $SYSTEM_PACKAGES/regex* 1>/dev/null 2>&1; then
+    cp -r $SYSTEM_PACKAGES/regex* \
+        "$SITE_PACKAGES/"
+else
+    echo "ERROR: regex missing – required for splitting emoji sequences"
     exit 1
 fi
 
