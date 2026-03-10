@@ -48,16 +48,69 @@ wget -O 154.patch "$PATCH_URL"
 patch -p1 < 154.patch
 
 ###############################################
-# Apply Wayland paste patch
+# Apply quality of life patch
 ###############################################
 
-cat > wayland-paste.patch << 'EOF'
+cat > qol.patch << 'EOF'
 --- a/emote/picker.py
 +++ b/emote/picker.py
-@@ -646,11 +646,19 @@
+@@ -234,23 +234,36 @@
+ 
+         self.action_bar.pack_start(self.emoji_preview_box)
+ 
+-        self.selected_box = Gtk.Box(
+-            spacing=GRID_SIZE, margin=GRID_SIZE, margin_bottom=0, expand=False
+-        )
+-
++        self.selected_eventbox = Gtk.EventBox()
++        self.selected_eventbox.set_visible_window(False)
++        self.selected_eventbox.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
++        
+         self.emoji_append_list_preview = Gtk.Label(
+             " ", max_width_chars=25, ellipsize=Pango.EllipsizeMode.START
+         )
+         self.emoji_append_list_preview.set_name("emoji_append_list_preview")
+-        self.selected_box.pack_start(self.emoji_append_list_preview, False, False, 0)
++        self.selected_eventbox.add(self.emoji_append_list_preview)
++
++        self.selected_eventbox.connect("button-press-event", self.on_selected_box_middle_click)
+ 
+-        self.action_bar.pack_end(self.selected_box)
++        self.action_bar.pack_end(self.selected_eventbox)
+ 
+         self.action_bar.show_all()
+-        self.selected_box.hide()
++        self.selected_eventbox.hide()
+ 
+         self.app_container.pack_end(self.action_bar, False, False, 0)
+ 
++    def on_selected_box_middle_click(self, widget, event):
++        """Clear emoji list on middle click (button 2)"""
++        if event.button == 2:  # Middle mouse button
++            print("✅ Cleared emoji selection!")
++            self.emoji_append_list_preview.set_text("")
++            self.copy_to_clipboard("")
++            self.emoji_append_list = []
++            self.selected_eventbox.hide()
++            return True
++        return False
++
+     def get_skintone_char(self, emoji):
+         char = emoji["char"]
+ 
+@@ -620,7 +633,7 @@
+         self.emoji_append_list.append(emoji)
+ 
+         if len(self.emoji_append_list) == 1:
+-            self.selected_box.show_all()
++            self.selected_eventbox.show()
+             self.previewed_emoji_name_label.set_max_width_chars(20)
+             self.previewed_emoji_shortcode_label.set_max_width_chars(20)
+ 
+@@ -646,11 +659,19 @@
              self.add_emoji_to_recent(emoji)
              self.copy_to_clipboard(emoji)
-
+ 
 +        # Let GTK process clipboard events
 +        for _ in range(10):
 +            while Gtk.events_pending():
@@ -65,7 +118,7 @@ cat > wayland-paste.patch << 'EOF'
 +            time.sleep(0.005)
 +
          self.destroy()
-
+ 
 -        if not config.is_wayland:
 -            time.sleep(0.15)
 -            os.system("xdotool key ctrl+v")
@@ -74,12 +127,13 @@ cat > wayland-paste.patch << 'EOF'
 +        else:
 +             time.sleep(0.15)
 +             os.system("xdotool key ctrl+v")
-
+ 
      def add_emoji_to_recent(self, emoji):
          user_data.update_recent_emojis(emoji)
+
 EOF
 
-patch -p1 < wayland-paste.patch
+patch -p1 < qol.patch
 
 ###############################################
 # Install into AppDir
