@@ -9,6 +9,13 @@ Run the AppImage in command line with argument `--reg` or `-r` to create the des
 
 Run the AppImage in command line with argument `--unreg` or `-u` to remove them
 
+# Help, some emojis are too wide!
+Your version of Pango, the library that renders text in GTK, doesn't support the version of Unicode `openmoji.csv` file was defined in.
+
+The easiest solution would be checking when was your distro released, and downloading `openmoji.csv` of around that date, then placing it into `~/.config` saved exactly as `openmoji.csv`.
+
+Emoji data is sourced from https://raw.githubusercontent.com/hfg-gmuend/openmoji/master/data/openmoji.csv
+
 # Tested distros
 <img src="https://upload.wikimedia.org/wikipedia/commons/7/7b/Ubuntu-logo-no-wordmark-solid-o-2022.svg" width="20"> Ubuntu 18.10
 

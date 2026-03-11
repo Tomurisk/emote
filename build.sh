@@ -44,6 +44,7 @@ wget -O "v${VERSION}.tar.gz" \
 tar xf "v${VERSION}.tar.gz"
 cd "Emote-${VERSION}"
 
+# Removes manimpango
 wget -O 154.patch "$PATCH_URL"
 patch -p1 < 154.patch
 
@@ -218,6 +219,52 @@ EOF
 patch -p1 < qol.patch
 
 ###############################################
+# User-defined openmoji.csv
+###############################################
+
+cat > openmoji.patch << 'EOF'
+--- a/emote/emojis.py
++++ b/emote/emojis.py
+@@ -1,5 +1,6 @@
+ import csv
+ import re
++from pathlib import Path
+ from collections import defaultdict
+ from emote import user_data, config
+ 
+@@ -50,13 +51,19 @@
+ 
+ 
+ def init():
+-    filename = (
+-        f"{config.snap_root}/static/emojis.csv"
+-        if config.is_snap
+-        else f"{config.flatpak_root}/static/emojis.csv"
+-        if config.is_flatpak
+-        else "static/emojis.csv"
+-    )
++    user_override = Path("~/.config/openmoji.csv").expanduser()
++
++    if user_override.exists():
++        print("Using user-defined openmoji.csv")
++        filename = str(user_override)
++    else:
++        filename = (
++            f"{config.snap_root}/static/openmoji.csv"
++            if config.is_snap
++            else f"{config.flatpak_root}/static/openmoji.csv"
++            if config.is_flatpak
++            else "static/openmoji.csv"
++        )
+ 
+     with open(filename, newline="") as csvfile:
+         reader = csv.DictReader(csvfile)
+
+EOF
+
+patch -p1 < openmoji.patch
+
+###############################################
 # Install into AppDir
 ###############################################
 
@@ -281,7 +328,7 @@ mkdir -p "$STATIC_DIR"
 cp "Emote-${VERSION}/static/style.css" "$STATIC_DIR/"
 cp "Emote-${VERSION}/static/logo.svg" "$STATIC_DIR/"
 
-wget -O "$STATIC_DIR/emojis.csv" \
+wget -O "$STATIC_DIR/openmoji.csv" \
   "https://raw.githubusercontent.com/hfg-gmuend/openmoji/refs/tags/16.0.0/data/openmoji.csv"
 
 cp "Emote-${VERSION}/static/com.tomjwatson.Emote.desktop" "$APPDIR/emote.desktop"
