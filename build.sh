@@ -13,9 +13,9 @@ AIT_VER="1.9.1"
 SPT_VER="1.2.3"
 PYVER="3.6"
 
-TARBALL_MD5="80df80daadbc81bbae639d6f0dd3d4e8"
-PATCH_MD5="46e93b3acd34dac8aa0c77b16f362bad"
-OPENMOJI_MD5="8410259d3ba38859a65e8a2c8c4f6687"
+TARBALL_SHA256="171ddf7e216f12a9e0ed63cd0a97796fd63967df3b3aa5e452877b74aabd48c9"
+PATCH_SHA256="c8fab9cd79c7def484809158930df576de5a6a4c08232272b3f8eed9ae18c874"
+OPENMOJI_SHA256="af7a784e6a0dafb343c5e1958b159ca577c1faad6ab37add8a939f849f9a0303"
 AIT_SHA256="ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
 SPT_SHA256="b2fa9f4b382a6cf88f2f345044d0916a92f37cac21355585bd14bc7ee91af187"
 
@@ -66,8 +66,8 @@ wget -O "v${VERSION}.tar.gz" \
 wget -O 154.patch \
   "https://patch-diff.githubusercontent.com/raw/tom-james-watson/Emote/pull/154.patch"
 
-if echo "$TARBALL_MD5  v${VERSION}.tar.gz" | md5sum -c - \
-   && echo "$PATCH_MD5  154.patch" | md5sum -c -; then
+if echo "$TARBALL_SHA256  v${VERSION}.tar.gz" | sha256sum -c - \
+   && echo "$PATCH_SHA256  154.patch" | sha256sum -c -; then
     echo "Checksums OK – extracting and patching"
     tar xf "v${VERSION}.tar.gz"
     mv 154.patch "Emote-${VERSION}"
@@ -361,7 +361,7 @@ cp "Emote-${VERSION}/static/logo.svg" "$STATIC_DIR"
 wget -O "$STATIC_DIR/openmoji.csv" \
   "https://raw.githubusercontent.com/hfg-gmuend/openmoji/refs/tags/16.0.0/data/openmoji.csv"
 
-if echo "$OPENMOJI_MD5  $STATIC_DIR/openmoji.csv" | md5sum -c -; then
+if echo "$OPENMOJI_SHA256  $STATIC_DIR/openmoji.csv" | sha256sum -c -; then
     echo "openmoji.csv checksum OK"
 else
     echo "ERROR: Checksum mismatch!"
