@@ -20,7 +20,7 @@ AIT_SHA256="ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
 SPT_SHA256="b2fa9f4b382a6cf88f2f345044d0916a92f37cac21355585bd14bc7ee91af187"
 
 # Clear old resources
-rm -rf "$APPDIR" "$AIT_DIR" Emote-* "v${VERSION}.tar.gz" requirements.txt
+rm -rf "$APPDIR" "$AIT_DIR" Emote-* "v${VERSION}.tar.gz" setproctitle.txt *.patch
 
 ###############################################
 # Fetch appimagetool dynamically
@@ -44,16 +44,20 @@ if [ ! -f "$APPIMAGETOOL" ]; then
 fi
 
 ###############################################
-# Install Python packages (user-level)
+# Install setproctitle (user-level)
 ###############################################
 
-cat > requirements.txt << EOF
+cat > setproctitle.txt << EOF
 setproctitle==$SPT_VER \
     --hash=sha256:$SPT_SHA256
 EOF
 
 python${PYVER} -m pip install --user --upgrade pip
-python${PYVER} -m pip install --user --upgrade --require-hashes -r requirements.txt
+if ! python${PYVER} -m pip install --user \
+        --require-hashes -r setproctitle.txt; then
+    echo "ERROR: setproctitle installation failed!"
+    exit 1
+fi
 
 ###############################################
 # Prepare sources
@@ -620,6 +624,6 @@ fi
 ###############################################
 
 shopt -s extglob
-rm -rf "$APPDIR" "$AIT_DIR" Emote-!(*.AppImage) "v${VERSION}.tar.gz" requirements.txt
+rm -rf "$APPDIR" "$AIT_DIR" Emote-!(*.AppImage) "v${VERSION}.tar.gz" setproctitle.txt *.patch
 
 echo "Done"
