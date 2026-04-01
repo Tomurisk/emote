@@ -3,6 +3,8 @@
 You can now middle‑click the preview to discard emojis. They also wrap across multiple rows, making it easier to work with dozens of emojis!
 ![Demo](demo.gif)
 
+Diacritics are now discarded, you may now search "curaçao" as "curacao"
+
 # Additional packages to install on your system
 X11: xdotool is already bundled
 

@@ -253,20 +253,21 @@ EOF
 patch -p1 < qol.patch
 
 ###############################################
-# User-defined openmoji.csv
+# User-defined openmoji.csv, discard diacritics
 ###############################################
 
-cat > openmoji.patch << 'EOF'
+cat > emojis.patch << 'EOF'
 --- a/emote/emojis.py
 +++ b/emote/emojis.py
-@@ -1,5 +1,6 @@
+@@ -1,5 +1,7 @@
  import csv
  import re
++import unicodedata
 +from pathlib import Path
  from collections import defaultdict
  from emote import user_data, config
  
-@@ -50,13 +51,19 @@
+@@ -50,13 +52,19 @@
  
  
  def init():
@@ -293,10 +294,41 @@ cat > openmoji.patch << 'EOF'
  
      with open(filename, newline="") as csvfile:
          reader = csv.DictReader(csvfile)
+@@ -124,13 +132,27 @@
+     return emojis_by_category
+ 
+ 
++def strip_diacritics(s):
++    # Normalize to NFD form and remove all combining marks (Mn)
++    return ''.join(
++        c for c in unicodedata.normalize("NFD", s)
++        if unicodedata.category(c) != "Mn"
++    )
++
+ def search(query):
+-    query = query.lower()
++    # Normalize and lowercase the query
++    query = strip_diacritics(query.lower())
+ 
+     def search_filter(emoji):
+         parts = emoji["name"].split("_")
+         search_terms = parts + [" ".join(parts)] + emoji["keywords"]
+-        search_terms = [search_term.lower() for search_term in search_terms]
+-        return any(query in search_term for search_term in search_terms)
++
++        # Normalize and lowercase all search terms
++        search_terms = [
++            strip_diacritics(term.lower())
++            for term in search_terms
++        ]
++
++        return any(query in term for term in search_terms)
+ 
+     return list(filter(search_filter, all_emojis))
 
 EOF
 
-patch -p1 < openmoji.patch
+patch -p1 < emojis.patch
 
 ###############################################
 # Install into AppDir
@@ -371,6 +403,21 @@ else
     echo "ERROR: Checksum mismatch!"
     exit 1
 fi
+
+perl -CSD -Mutf8 -i -pe '
+  if (/([Tt][\x{DC}\x{FC}Uu][Rr][Kk][\x{130}Ii\x{131}][Yy][Ee])/u){
+      $w = $1;
+      $upper = ($w =~ tr/A-Z\x{DC}\x{130}//);
+      $lower = ($w =~ tr/a-z\x{FC}\x{131}//);
+      if ($w =~ /^[a-z]/u) {
+          s/$w/turkey/;
+      } elsif ($upper > $lower) {
+          s/$w/TURKEY/;
+      } else {
+          s/$w/Turkey/;
+      }
+  }
+' "$STATIC_DIR/openmoji.csv" # You ain't getting it, Erdoğan
 
 cp "Emote-${VERSION}/static/com.tomjwatson.Emote.desktop" "$APPDIR/emote.desktop"
 sed -i 's/Icon=.*/Icon=emote/' "$APPDIR/emote.desktop"
