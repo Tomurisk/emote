@@ -226,6 +226,10 @@ cp "$APPDIR/emote.desktop" "$APPDIR/usr/share/applications"
 mkdir -p "$APPDIR/usr/share/icons/hicolor/scalable/apps"
 cp "$APPDIR/emote.svg" "$APPDIR/usr/share/icons/hicolor/scalable/apps"
 
+# License
+mkdir -p "$APPDIR/usr/share/licenses/emote"
+cp "Emote-${VERSION}/LICENSE.md" "$APPDIR/usr/share/licenses/emote"
+
 ###############################################
 # Registration script
 ###############################################
