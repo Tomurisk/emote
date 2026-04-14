@@ -7,14 +7,11 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  cleanup:
+    name: Delete old continuous release and tag
     runs-on: ubuntu-latest
-
-    container:
-      image: almalinux:latest
-
     steps:
-      - name: Delete old continuous release and tag
+      - name: DELETE request
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -50,23 +47,37 @@ jobs:
           else
             echo "Tag 'continuous' does not exist."
           fi
-      - name: Update system
-        run: |
-          dnf -y update
 
-      - name: Install dependencies
-        run: |
-          dnf install -y patch wget file perl dnf-plugins-core cpio
+  build-appimage:
+    name: Build AppImage (${{ matrix.arch }})
+    needs: cleanup
+    runs-on: ${{ matrix.runner }}
+    container: almalinux:latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+
+    steps:
       - uses: actions/checkout@main
 
-      - name: Make build script executable
-        run: chmod +x build.sh
+      - name: Update system
+        run: dnf -y update
+
+      - name: Install dependencies
+        run: dnf install -y patch wget file perl dnf-plugins-core cpio
 
       - name: Build AppImage
-        run: ./build.sh
+        run: |
+          chmod +x build.sh
+          ./build.sh
 
-      - name: Upload to Continuous Release
+      - name: Upload AppImage
         uses: softprops/action-gh-release@master
         with:
           tag_name: continuous

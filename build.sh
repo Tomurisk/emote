@@ -9,6 +9,9 @@ alias wget='wget --https-only --secure-protocol=TLSv1_2'
 # Content blocks
 source content_blocks.sh
 
+# Architecture
+ARCH="$(uname -m)"
+
 # Versions
 VERSION="4.1.0"
 AIT_VER="1.9.1"
@@ -18,18 +21,36 @@ PYVER="3.6"
 AIT_DIR="/tmp/appimagetool"
 APPDIR="$(pwd)/AppDir"
 RPMS="$(pwd)/RPMs"
-SPT_URL="https://web.archive.org/web/20260405142525/
+AMD64_SPT_URL="https://web.archive.org/web/20260405142525/
 https://files.pythonhosted.org/packages/8f/71/
 1017f29259f486f963535213b2b81645da35edd14de3539084e2d291d16b/
 setproctitle-1.2.3-cp36-cp36m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
-# I archived it myself and calculated the hash when the wheel was still up
+ARM64_SPT_URL="https://web.archive.org/web/20260414145941/
+https://files.pythonhosted.org/packages/93/89/
+00032e9dc86fdd4f254b37c58d9d1f49cd8a5bdb5546265be74de40a18a7/
+setproctitle-1.2.3-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.whl"
+# I archived them myself and calculated hashes when the wheels were still up
 
 # Hashes
 TARBALL_SHA256="171ddf7e216f12a9e0ed63cd0a97796fd63967df3b3aa5e452877b74aabd48c9"
 PATCH_SHA256="c8fab9cd79c7def484809158930df576de5a6a4c08232272b3f8eed9ae18c874"
 OPENMOJI_SHA256="af7a784e6a0dafb343c5e1958b159ca577c1faad6ab37add8a939f849f9a0303"
-AIT_SHA256="ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
-SPT_SHA256="b2fa9f4b382a6cf88f2f345044d0916a92f37cac21355585bd14bc7ee91af187"
+AMD64_AIT_SHA256="ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0"
+AMD64_SPT_SHA256="b2fa9f4b382a6cf88f2f345044d0916a92f37cac21355585bd14bc7ee91af187"
+ARM64_AIT_SHA256="f0837e7448a0c1e4e650a93bb3e85802546e60654ef287576f46c71c126a9158"
+ARM64_SPT_SHA256="a546cd2dfaecb227d24122257b98b2e062762871888835c7b608f1c41c3a77ad"
+
+# Set the right arch variables
+if [[ "$ARCH" == "x86_64" ]]; then
+    AIT_SHA256="$AMD64_AIT_SHA256"
+    SPT_SHA256="$AMD64_SPT_SHA256"
+    SPT_URL="$AMD64_SPT_URL"
+
+elif [[ "$ARCH" == "aarch64" ]]; then
+    AIT_SHA256="$ARM64_AIT_SHA256"
+    SPT_SHA256="$ARM64_SPT_SHA256"
+    SPT_URL="$ARM64_SPT_URL"
+fi
 
 # Clear old resources
 rm -rf "$APPDIR" "$AIT_DIR" Emote-* RPMs "v${VERSION}.tar.gz" *.whl
@@ -70,7 +91,7 @@ mkdir -p "$RPMS"
 pushd "$RPMS" >/dev/null
 
 dnf download \
-  --arch=x86_64 \
+  --arch=${ARCH} \
   --disablerepo="*" \
   --enablerepo=ol8_epel \
   libxdo \
@@ -78,7 +99,7 @@ dnf download \
   python3-regex
 
 dnf download \
-  --arch=x86_64 \
+  --arch=${ARCH} \
   --disablerepo="*" \
   --enablerepo=ol8_base \
   libffi \
@@ -89,7 +110,7 @@ dnf download \
   python3-libs
 
 dnf download \
-  --arch=x86_64 \
+  --arch=${ARCH} \
   --disablerepo="*" \
   --enablerepo=ol8_appstream \
   keybinder3 \
@@ -339,13 +360,13 @@ chmod +x "$APPDIR/AppRun"
 # Fetch appimagetool dynamically
 ###############################################
 
-APPIMAGETOOL="$AIT_DIR/appimagetool-x86_64.AppImage"
+APPIMAGETOOL="$AIT_DIR/appimagetool.AppImage"
 mkdir -p "$AIT_DIR"
 
 if [ ! -f "$APPIMAGETOOL" ]; then
     echo "Downloading appimagetool..."
     wget -O "$APPIMAGETOOL" \
-      "https://github.com/AppImage/appimagetool/releases/download/${AIT_VER}/appimagetool-x86_64.AppImage"
+      "https://github.com/AppImage/appimagetool/releases/download/${AIT_VER}/appimagetool-${ARCH}.AppImage"
 
     if echo "$AIT_SHA256  $APPIMAGETOOL" | sha256sum -c -; then
         echo "appimagetool checksum OK"
@@ -360,7 +381,7 @@ fi
 # Build AppImage
 ###############################################
 
-RUNTIME="runtime-x86_64"
+RUNTIME="runtime-${ARCH}"
 
 appimage_key
 
@@ -371,7 +392,7 @@ wget -O "$AIT_DIR/$RUNTIME" \
 
 if gpg --verify "$AIT_DIR/$RUNTIME.sig" "$AIT_DIR/$RUNTIME" 2>/dev/null; then
     echo "Runtime signature OK"
-    ARCH=x86_64 "$APPIMAGETOOL" --appimage-extract-and-run --no-appstream --runtime-file "$AIT_DIR/$RUNTIME" "$APPDIR"
+    ARCH=${ARCH} "$APPIMAGETOOL" --appimage-extract-and-run --no-appstream --runtime-file "$AIT_DIR/$RUNTIME" "$APPDIR"
 else
     echo "ERROR: Signature verification failed!"
     exit 1
