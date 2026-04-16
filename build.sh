@@ -10,7 +10,7 @@ alias wget='wget --https-only --secure-protocol=TLSv1_2'
 source content_blocks.sh
 
 # Architecture
-ARCH="$(uname -m)"
+: "${ARCH:=$(uname -m)}"
 
 # Versions
 VERSION="4.1.0"
@@ -50,6 +50,12 @@ elif [[ "$ARCH" == "aarch64" ]]; then
     AIT_SHA256="$ARM64_AIT_SHA256"
     SPT_SHA256="$ARM64_SPT_SHA256"
     SPT_URL="$ARM64_SPT_URL"
+
+    echo "$ARCH architecture build has been scrapped"
+    exit 1
+else
+    echo "Unsupported architecture: $ARCH"
+    exit 1
 fi
 
 # Clear old resources
@@ -109,6 +115,8 @@ dnf download \
   python3-gobject-base \
   python3-libs
 
+# SCRAPPED: ARM64 is not tolerant for ABI mismatches, so either bundle it all
+# yourself from these on, or create your own Flatpak at that point 🥀💀👹
 if [[ "$ARCH" == "aarch64" ]]; then
 dnf download \
   --arch=${ARCH} \
@@ -120,16 +128,8 @@ dnf download \
   fontconfig \
   gdk-pixbuf2 \
   freetype
-fi
+# [you continue if you want] 
 
-dnf download \
-  --arch=${ARCH} \
-  --disablerepo="*" \
-  --enablerepo=ol8_appstream \
-  keybinder3 \
-  python3-cairo
-
-if [[ "$ARCH" == "aarch64" ]]; then
 dnf download \
   --arch=${ARCH} \
   --disablerepo="*" \
@@ -139,6 +139,7 @@ dnf download \
   fribidi \
   pixman \
   atk
+# [you continue if you want] 
 fi
 
 popd >/dev/null
