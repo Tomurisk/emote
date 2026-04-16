@@ -109,12 +109,37 @@ dnf download \
   python3-gobject-base \
   python3-libs
 
+if [[ "$ARCH" == "aarch64" ]]; then
+dnf download \
+  --arch=${ARCH} \
+  --disablerepo="*" \
+  --enablerepo=ol8_base \
+  glib2 \
+  gobject-introspection \
+  pcre \
+  fontconfig \
+  gdk-pixbuf2 \
+  freetype
+fi
+
 dnf download \
   --arch=${ARCH} \
   --disablerepo="*" \
   --enablerepo=ol8_appstream \
   keybinder3 \
   python3-cairo
+
+if [[ "$ARCH" == "aarch64" ]]; then
+dnf download \
+  --arch=${ARCH} \
+  --disablerepo="*" \
+  --enablerepo=ol8_appstream \
+  pango \
+  cairo \
+  fribidi \
+  pixman \
+  atk
+fi
 
 popd >/dev/null
 
