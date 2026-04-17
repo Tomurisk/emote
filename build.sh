@@ -11,6 +11,7 @@ source content_blocks.sh
 
 # Architecture
 : "${ARCH:=$(uname -m)}"
+: "${AIT_ARCH:=$ARCH}"
 
 # Versions
 VERSION="4.1.0"
@@ -42,12 +43,10 @@ ARM64_SPT_SHA256="a546cd2dfaecb227d24122257b98b2e062762871888835c7b608f1c41c3a77
 
 # Set the right arch variables
 if [[ "$ARCH" == "x86_64" ]]; then
-    AIT_SHA256="$AMD64_AIT_SHA256"
     SPT_SHA256="$AMD64_SPT_SHA256"
     SPT_URL="$AMD64_SPT_URL"
 
 elif [[ "$ARCH" == "aarch64" ]]; then
-    AIT_SHA256="$ARM64_AIT_SHA256"
     SPT_SHA256="$ARM64_SPT_SHA256"
     SPT_URL="$ARM64_SPT_URL"
 
@@ -57,6 +56,16 @@ else
     echo "Unsupported architecture: $ARCH"
     exit 1
 fi
+
+case "$AIT_ARCH" in
+    x86_64)
+        AIT_SHA256="$AMD64_AIT_SHA256" ;;
+    aarch64)
+        AIT_SHA256="$ARM64_AIT_SHA256" ;;
+    *)
+        echo "Unsupported architecture: $AIT_ARCH"
+        exit 1 ;;
+esac
 
 # Clear old resources
 rm -rf "$APPDIR" "$AIT_DIR" Emote-* RPMs "v${VERSION}.tar.gz" *.whl
@@ -70,24 +79,24 @@ rm -rf "$APPDIR" "$AIT_DIR" Emote-* RPMs "v${VERSION}.tar.gz" *.whl
 
 ol8_key
 
-tee /etc/yum.repos.d/ol8.repo > /dev/null << 'EOF'
+tee /etc/yum.repos.d/ol8.repo > /dev/null << EOF
 [ol8_base]
 name=Oracle Linux 8 Base
-baseurl=https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/$basearch/
+baseurl=https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/$ARCH/
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/OL8
 enabled=0
 
 [ol8_epel]
 name=Oracle Linux 8 EPEL
-baseurl=https://yum.oracle.com/repo/OracleLinux/OL8/developer/EPEL/$basearch/
+baseurl=https://yum.oracle.com/repo/OracleLinux/OL8/developer/EPEL/$ARCH/
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/OL8
 enabled=0
 
 [ol8_appstream]
 name=Oracle Linux 8 AppStream
-baseurl=https://yum.oracle.com/repo/OracleLinux/OL8/appstream/$basearch/
+baseurl=https://yum.oracle.com/repo/OracleLinux/OL8/appstream/$ARCH/
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/OL8
 enabled=0
@@ -392,7 +401,7 @@ mkdir -p "$AIT_DIR"
 if [ ! -f "$APPIMAGETOOL" ]; then
     echo "Downloading appimagetool..."
     wget -O "$APPIMAGETOOL" \
-      "https://github.com/AppImage/appimagetool/releases/download/${AIT_VER}/appimagetool-${ARCH}.AppImage"
+      "https://github.com/AppImage/appimagetool/releases/download/${AIT_VER}/appimagetool-${AIT_ARCH}.AppImage"
 
     if echo "$AIT_SHA256  $APPIMAGETOOL" | sha256sum -c -; then
         echo "appimagetool checksum OK"

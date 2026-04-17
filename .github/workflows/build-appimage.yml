@@ -72,7 +72,13 @@ jobs:
         # SCRAPPED: ARM64 is not tolerant for ABI mismatches,
         # this AppImage can't be easily ported to ARM64
         # - arch: arm64
-        #   runner: ubuntu-24.04-arm
+        #   runner: ubuntu-latest
+        #   env:
+        #     ARCH: aarch64
+        #     AIT_ARCH: x86_64
+    env:
+      ARCH: ${{ matrix.env.ARCH }}
+      AIT_ARCH: ${{ matrix.env.AIT_ARCH }}
 
     steps:
       - uses: actions/checkout@main
