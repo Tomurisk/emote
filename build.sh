@@ -6,6 +6,13 @@ alias wget='wget --https-only --secure-protocol=TLSv1_2'
 # Config
 ###############################################
 
+# Detect Docker
+if [ -f /.dockerenv ] || grep -q docker /proc/1/cgroup; then
+    SUDO=""
+else
+    SUDO="sudo"
+fi
+
 # Content blocks
 source content_blocks.sh
 
@@ -79,7 +86,7 @@ rm -rf "$APPDIR" "$AIT_DIR" Emote-* RPMs "v${VERSION}.tar.gz" *.whl
 
 ol8_key
 
-tee /etc/yum.repos.d/ol8.repo > /dev/null << EOF
+$SUDO tee /etc/yum.repos.d/ol8.repo > /dev/null << EOF
 [ol8_base]
 name=Oracle Linux 8 Base
 baseurl=https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/$ARCH/
@@ -439,5 +446,8 @@ fi
 
 shopt -s extglob
 rm -rf "$APPDIR" "$AIT_DIR" Emote-!(*.AppImage) RPMs "v${VERSION}.tar.gz" *.whl
+
+$SUDO rm -rf "/etc/yum.repos.d/ol8.repo"
+$SUDO rm -rf "/etc/pki/rpm-gpg/OL8"
 
 echo "Done"

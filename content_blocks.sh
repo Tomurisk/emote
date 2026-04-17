@@ -1,5 +1,5 @@
 ol8_key() {
-tee /etc/pki/rpm-gpg/OL8 > /dev/null << 'EOF'
+$SUDO tee /etc/pki/rpm-gpg/OL8 > /dev/null << 'EOF'
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v2.0.14 (GNU/Linux)
 
