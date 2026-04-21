@@ -169,6 +169,7 @@ for rpm in "$RPMS"/*.rpm; do
         echo "RPM signature OK"
     else
         echo "ERROR: Signature verification failed!"
+        exit 1
     fi
 
     # Create a temporary extraction directory
