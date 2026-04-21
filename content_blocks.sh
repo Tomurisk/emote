@@ -1,5 +1,5 @@
 ol8_key() {
-$SUDO tee /etc/pki/rpm-gpg/OL8 > /dev/null << 'EOF'
+cat << 'EOF' | $SUDO rpm --import -
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v2.0.14 (GNU/Linux)
 
@@ -56,7 +56,7 @@ EOF
 }
 
 appimage_key() {
-gpg --import <<'EOF'
+gpg --import << 'EOF'
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 
 mDMEZjaeexYJKwYBBAHaRw8BAQdAhvHdHoBweX0uVRgfcnlzexrSg+TAbK2mU1TA

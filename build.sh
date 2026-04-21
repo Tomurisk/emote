@@ -170,6 +170,13 @@ popd >/dev/null
 for rpm in "$RPMS"/*.rpm; do
     echo "Processing $rpm"
 
+    # Verify against OL8 key, v3 legacy signature
+    if rpm --checksig "$rpm" >/dev/null 2>&1; then
+        echo "RPM signature OK"
+    else
+        echo "ERROR: Signature verification failed!"
+    fi
+
     # Create a temporary extraction directory
     TMPDIR=$(mktemp -d)
 
@@ -455,6 +462,6 @@ shopt -s extglob
 rm -rf "$APPDIR" "$AIT_DIR" Emote-!(*.AppImage) RPMs "v${VERSION}.tar.gz" *.whl
 
 $SUDO rm -rf "/etc/yum.repos.d/ol8.repo"
-$SUDO rm -rf "/etc/pki/rpm-gpg/OL8"
+$SUDO rpm -e gpg-pubkey-76fd3db13ab67410b89db10e82562ea9ad986da3-5cabf60d
 
 echo "Done"

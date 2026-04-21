@@ -61,7 +61,7 @@ jobs:
     name: Build AppImage (${{ matrix.arch }})
     needs: cleanup
     runs-on: ${{ matrix.runner }}
-    container: almalinux:latest
+    container: fedora:rawhide
 
     strategy:
       fail-fast: false
