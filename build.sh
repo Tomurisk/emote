@@ -90,22 +90,16 @@ $SUDO tee /etc/yum.repos.d/ol8.repo > /dev/null << EOF
 [ol8_base]
 name=Oracle Linux 8 Base
 baseurl=https://yum.oracle.com/repo/OracleLinux/OL8/baseos/latest/$ARCH/
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/OL8
 enabled=0
 
 [ol8_epel]
 name=Oracle Linux 8 EPEL
 baseurl=https://yum.oracle.com/repo/OracleLinux/OL8/developer/EPEL/$ARCH/
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/OL8
 enabled=0
 
 [ol8_appstream]
 name=Oracle Linux 8 AppStream
 baseurl=https://yum.oracle.com/repo/OracleLinux/OL8/appstream/$ARCH/
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/OL8
 enabled=0
 EOF
 
@@ -462,6 +456,6 @@ shopt -s extglob
 rm -rf "$APPDIR" "$AIT_DIR" Emote-!(*.AppImage) RPMs "v${VERSION}.tar.gz" *.whl
 
 $SUDO rm -rf "/etc/yum.repos.d/ol8.repo"
-$SUDO rpm -e gpg-pubkey-76fd3db13ab67410b89db10e82562ea9ad986da3-5cabf60d
+$SUDO rpmkeys --delete 76fd3db13ab67410b89db10e82562ea9ad986da3
 
 echo "Done"
