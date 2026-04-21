@@ -193,8 +193,8 @@ echo "RPMs merged into AppDir"
 # Remove OpenSSL 1.1 engines – not used in Python
 rm -rf "$APPDIR/usr/lib64/engines-1.1"
 
-# Ensure platform-python3.6m symlink exists
-ln -sf "../libexec/platform-python3.6m" "$APPDIR/usr/bin/python3.6"
+# Ensure platform-python symlink exists
+ln -sf "../libexec/platform-python${PYVER}m" "$APPDIR/usr/bin/python${PYVER}"
 
 SITE_PACKAGES="$APPDIR/usr/lib64/python${PYVER}/site-packages"
 
