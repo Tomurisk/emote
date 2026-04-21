@@ -131,6 +131,13 @@ dnf download \
   python3-gobject-base \
   python3-libs
 
+dnf download \
+  --arch=${ARCH} \
+  --disablerepo="*" \
+  --enablerepo=ol8_appstream \
+  keybinder3 \
+  python3-cairo
+
 # SCRAPPED: ARM64 is not tolerant for ABI mismatches, so either bundle it all
 # yourself from these on, or create your own Flatpak at that point 🥀💀👹
 if [[ "$ARCH" == "aarch64" ]]; then
